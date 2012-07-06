@@ -3832,7 +3832,14 @@ klass:              do {
             spaces(this, paren);
             no_space();
             if (next_token.id === 'var') {
-                stop('move_var');
+                if (!option.vars) {
+                    warn('move_var');
+                }
+                advance();
+                one_space_only();
+                if (next_token.identifier) {
+                    add_label(next_token, 'unused');
+                }
             }
             edge();
             if (peek(0).id === 'in') {
