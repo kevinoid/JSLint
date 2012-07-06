@@ -260,7 +260,7 @@
     params, paren, passfail, plusplus, postscript, predef, properties,
     properties_report, property, prototype, push, quote, r, radix, raw,
     read_only, reason, regexp, relation, replace, report, reserved, reserved_a,
-    rhino, right, scanned_a_b, search, second, shift, slash_equal, slice,
+    rhino, right, scanned_a_b, search, second, set_after_get_a, shift, slash_equal, slice,
     sloppy, sort, split, statement_block, stopping, strange_loop, strict,
     string, stupid, sub, subscript, substr, supplant, sync_a, t, tag_a_in_b,
     test, third, thru, toString, todo, todo_comment, token, tokens, too_long,
@@ -458,6 +458,7 @@ var JSLINT = (function () {
             read_only: "Read only.",
             reserved_a: "Reserved name '{a}'.",
             scanned_a_b: "{a} ({b}% scanned).",
+            set_after_get_a: "Setter should appear immediately after getter for '{a}'.",
             slash_equal: "A regular expression literal can be confused with '/='.",
             statement_block: "Expected to see a statement and instead saw a block.",
             stopping: "Stopping.",
@@ -3349,7 +3350,7 @@ klass:              do {
     }
 
     prefix('{', function (that) {
-        var get, i, name, p, set, seenget = {}, seenset = {};
+        var get, i, last, name, p, set, seenget = {}, seenset = {};
         that.first = [];
         step_in();
         while (next_token.id !== '}') {
@@ -3368,7 +3369,6 @@ klass:              do {
                 if (!i) {
                     stop('missing_property');
                 }
-                get.string = '';
                 do_function(get);
                 if (funct['(loopage)']) {
                     warn('function_loop', get);
@@ -3380,6 +3380,8 @@ klass:              do {
                 name.first = get;
                 if (seenget[i] === true) {
                     warn('duplicate_a', next_token, i);
+                } else if (seenset[i] === true) {
+                    warn('set_after_get_a', next_token, i);
                 }
                 seenget[i] = true;
             } else if (next_token.string === 'set' && peek().id !== ':') {
@@ -3394,7 +3396,6 @@ klass:              do {
                 if (!i) {
                     stop('missing_property');
                 }
-                set.string = '';
                 do_function(set);
                 if (set.block.length === 0) {
                     warn('missing_a', token, 'throw');
@@ -3408,6 +3409,11 @@ klass:              do {
                 name.first = set;
                 if (seenset[i] === true) {
                     warn('duplicate_a', next_token, i);
+                } else if (seenget[i] === true) {
+                    last = this.first[this.first.length - 1];
+                    if (last.string !== name.string) {
+                        warn('set_after_get_a', next_token, i);
+                    }
                 }
                 seenset[i] = true;
             } else {
