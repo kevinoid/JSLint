@@ -3349,14 +3349,11 @@ klass:              do {
     }
 
     prefix('{', function (that) {
-        var get, i, j, name, p, set, seen = {};
+        var get, i, name, p, set, seenget = {}, seenset = {};
         that.first = [];
         step_in();
         while (next_token.id !== '}') {
             indent.wrap = false;
-
-// JSLint recognizes the ES5 extension for get/set in object literals,
-// but requires that they be used in pairs.
 
             edge();
             if (next_token.string === 'get' && peek().id !== ':') {
@@ -3380,17 +3377,24 @@ klass:              do {
                 if (p && p.length) {
                     warn('parameter_a_get_b', p[0], p[0].string, i);
                 }
-                comma();
-                set = next_token;
-                spaces();
-                edge();
-                advance('set');
-                set.string = '';
-                one_space_only();
-                j = property_name();
-                if (i !== j) {
-                    stop('expected_a_b', token, i, j || next_token.string);
+                name.first = get;
+                if (seenget[i] === true) {
+                    warn('duplicate_a', next_token, i);
                 }
+                seenget[i] = true;
+            } else if (next_token.string === 'set' && peek().id !== ':') {
+                if (!option.es5) {
+                    warn('es5');
+                }
+                set = next_token;
+                advance('set');
+                one_space_only();
+                name = next_token;
+                i = property_name();
+                if (!i) {
+                    stop('missing_property');
+                }
+                set.string = '';
                 do_function(set);
                 if (set.block.length === 0) {
                     warn('missing_a', token, 'throw');
@@ -3401,7 +3405,11 @@ klass:              do {
                 } else if (p[0].string !== 'value') {
                     stop('expected_a_b', p[0], 'value', p[0].string);
                 }
-                name.first = [get, set];
+                name.first = set;
+                if (seenset[i] === true) {
+                    warn('duplicate_a', next_token, i);
+                }
+                seenset[i] = true;
             } else {
                 name = next_token;
                 i = property_name();
@@ -3411,12 +3419,12 @@ klass:              do {
                 advance(':');
                 spaces();
                 name.first = expression(10);
+                if (seenget[i] === true || seenset[i] === true) {
+                    warn('duplicate_a', next_token, i);
+                }
+                seenget[i] = seenget[i] = true;
             }
             that.first.push(name);
-            if (seen[i] === true) {
-                warn('duplicate_a', next_token, i);
-            }
-            seen[i] = true;
             tally_property(i);
             if (next_token.id !== ',') {
                 break;
