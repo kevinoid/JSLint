@@ -3397,9 +3397,9 @@ klass:              do {
                 }
                 p = set.first;
                 if (!p || p.length !== 1) {
-                    stop('parameter_set_a', set, 'value');
+                    warn('parameter_set_a', set, 'value');
                 } else if (p[0].string !== 'value') {
-                    stop('expected_a_b', p[0], 'value', p[0].string);
+                    warn('expected_a_b', p[0], 'value', p[0].string);
                 }
                 name.first = [get, set];
             } else {
