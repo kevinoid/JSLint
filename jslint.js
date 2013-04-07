@@ -193,6 +193,7 @@
 //     bitwise    true, if bitwise operators should be allowed
 //     browser    true, if the standard browser globals should be predefined
 //     closure    true, if Google Closure idioms should be tolerated
+//     constvar   true, if the const keyword can be used in place of var
 //     continue   true, if the continuation statement should be tolerated
 //     debug      true, if debugger statements should be allowed
 //     devel      true, if logging should be allowed (console, alert, etc.)
@@ -237,7 +238,7 @@
     avoid_a, b, bad_assignment, bad_constructor, bad_in_a, bad_invocation,
     bad_new, bad_number, bad_operand, bad_wrap, bitwise, block, browser, c,
     call, charAt, charCodeAt, character, closure, color, combine_var, comments,
-    conditional_assignment, confusing_a, confusing_regexp, constructor_name_a,
+    conditional_assignment, confusing_a, confusing_regexp, constructor_name_a, constvar,
     continue, control_a, couch, create, d, dangling_a, data, debug, deleted,
     devel, disrupt, duplicate_a, edge, edition, else, empty_block, empty_case,
     empty_class, entityify, eqeq, error_report, errors, es5, evidence, evil,
@@ -304,6 +305,7 @@ var JSLINT = (function () {
             bitwise   : true,
             browser   : true,
             closure   : true,
+            constvar  : true,
             continue  : true,
             couch     : true,
             debug     : true,
@@ -3453,7 +3455,7 @@ klass:              do {
     stmt('/*property', directive);
     stmt('/*properties', directive);
 
-    stmt('var', function () {
+    function var_stmt() {
 
 // JavaScript does not have block scope. It only has function scope. So,
 // declaring a variable in a block can have unexpected consequences.
@@ -3462,6 +3464,10 @@ klass:              do {
 // and assignment tokens.
 
         var assign, id, name;
+
+        if (token.id === 'const' && !option.constvar) {
+            warn('expected_a_b', token, 'var', 'const');
+        }
 
         if (funct['(vars)'] && !option.vars) {
             warn('combine_var');
@@ -3514,7 +3520,9 @@ klass:              do {
         var_mode = null;
         step_out();
         return this;
-    });
+    }
+    stmt('var', var_stmt);
+    stmt('const', var_stmt);
 
     stmt('function', function () {
         one_space();
